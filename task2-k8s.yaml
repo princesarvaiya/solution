@@ -20,7 +20,7 @@ kind: Pod
 metadata:
     name: task2
     annotations:
-    container.apparmor.security.beta.kubernetes.io/hello: dind-daemon/k8s-apparmor-task2
+      container.apparmor.security.beta.kubernetes.io/dind-daemon: localhost/k8s-apparmor-task2
 spec:
     containers:
       - name: dind-daemon
