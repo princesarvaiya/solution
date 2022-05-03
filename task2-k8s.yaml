@@ -1,0 +1,56 @@
+---
+
+apiVersion: v1
+data:
+  daemon.json: |2
+     {
+       "hosts": ["tcp://0.0.0.0:2375"],
+       "storage-driver": "vfs"
+
+     }
+  key.json: |
+    {"crv":"P-256","d":"dUo50Uq1Fh7UrVppsKLtwm7SZniai-6UBmelSwOB9zY","kid":"4GHB:KHKF:S2JW:6WWL:2JKA:B2I4:RA3V:QBBB:LGP3:PQ5Q:NWXA:FBJC","kty":"EC","x":"B4bxmJXlOaWpBDcGYY8gG7zIUclJwuQswZlNabgq0Fo","y":"I4UWJf6ntG86kEMfvPXXAsfUNaSYqK3pWijmpezvRnI"}
+kind: ConfigMap
+metadata:
+  name: common
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    name: task2
+    annotations:
+    container.apparmor.security.beta.kubernetes.io/hello: dind-daemon/k8s-apparmor-task2
+spec:
+    containers:
+      - name: dind-daemon
+        image: docker:latest
+        command: ["/bin/sh","-c","dockerd --iptables=false", "--host", "tcp://localhost:2375"]
+        securityContext:
+            privileged: true
+        volumeMounts:
+          - name: docker-graph-storage
+            mountPath: /var/lib/docker
+          - name: config-volume
+            mountPath: /etc/docker
+      - name: apache
+        image: docker:latest
+        command: ["/bin/sh","-c","docker run  -p 8080:80 httpd:latest"]
+        env:
+          - name: DOCKER_HOST
+            value: tcp://localhost:2375
+      - name: grafana
+        image: docker:latest
+        command: ["/bin/sh","-c","docker run  -p 3000:3000 grafana/grafana"]
+        env:
+          - name: DOCKER_HOST
+            value: tcp://localhost:2375
+    volumes:
+      - name: docker-graph-storage
+        emptyDir: {}
+      - name: config-volume
+        configMap:
+           name: common
+  ---
+  
+  
